@@ -1,9 +1,11 @@
 [package]
 name = "daily-vocab-mailer"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+chrono = "0.4.42"
 clap = { version = "4", features = ["derive"] }
+lettre = "0.11"
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", features = ["preserve_order"] }
