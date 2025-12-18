@@ -18,6 +18,10 @@ struct Args {
     #[arg(short, long)]
     to: String,
 
+    /// Number of vocabulary words to send
+    #[arg(short = 'n', long, default_value = "5")]
+    num_words: usize,
+
     /// Dry run mode - print email instead of sending
     #[arg(long)]
     dry_run: bool,
@@ -86,9 +90,11 @@ fn main() {
     let vocab_file: VocabFile =
         serde_json::from_str(&contents).expect("Failed to parse vocabulary JSON file");
 
+    let vocab: &[VocabEntry] = &vocab_file.vocab[..args.num_words.min(vocab_file.vocab.len())];
+
     let today = Local::now().format("%B %d, %Y");
     let subject = format!("📚 Daily Vocabulary - {}", today);
-    let body = format_vocab_body(&subject, &vocab_file.vocab);
+    let body = format_vocab_body(&subject, vocab);
 
     if args.dry_run {
         println!("=== DRY RUN ===");
