@@ -2,8 +2,8 @@ mod email;
 
 use chrono::Local;
 use clap::Parser;
+use daily_vocab_mailer::{format_vocab_body, VocabFile};
 use email::EmailConfig;
-use serde::Deserialize;
 use std::fs;
 
 #[derive(Parser)]
@@ -27,61 +27,6 @@ struct Args {
     dry_run: bool,
 }
 
-#[derive(Deserialize)]
-struct VocabFile {
-    vocab: Vec<VocabEntry>,
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum Definition {
-    Single(String),
-    Multiple(Vec<String>),
-}
-
-#[derive(Deserialize)]
-struct VocabEntry {
-    word: String,
-    definition: Definition,
-    examples: Vec<Example>,
-}
-
-#[derive(Deserialize)]
-#[serde(untagged)]
-enum Example {
-    Simple(String),
-    Bilingual([String; 2]),
-}
-
-fn format_vocab_body(subject: &str, vocab: &[VocabEntry]) -> String {
-    let mut body = format!("{}\n\n", subject);
-
-    for entry in vocab.iter() {
-        body.push_str(&format!("{}\n", entry.word));
-        match &entry.definition {
-            Definition::Single(def) => body.push_str(&format!("{}\n", def)),
-            Definition::Multiple(defs) => {
-                for def in defs {
-                    body.push_str(&format!("{}\n", def));
-                }
-            }
-        }
-        body.push_str("Examples:\n");
-        for example in &entry.examples {
-            match example {
-                Example::Simple(s) => body.push_str(&format!("  - {}\n", s)),
-                Example::Bilingual([first, second]) => {
-                    body.push_str(&format!("  - {}\n", first));
-                    body.push_str(&format!("    {}\n", second));
-                }
-            }
-        }
-        body.push('\n');
-    }
-
-    body
-}
-
 fn main() {
     let args = Args::parse();
 
@@ -90,7 +35,7 @@ fn main() {
     let vocab_file: VocabFile =
         serde_json::from_str(&contents).expect("Failed to parse vocabulary JSON file");
 
-    let vocab: &[VocabEntry] = &vocab_file.vocab[..args.num_words.min(vocab_file.vocab.len())];
+    let vocab = &vocab_file.vocab[..args.num_words.min(vocab_file.vocab.len())];
 
     let today = Local::now().format("%B %d, %Y");
     let subject = format!("📚 Daily Vocabulary - {}", today);
